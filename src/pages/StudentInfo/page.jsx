@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -7,25 +7,29 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ZoomIn, ZoomOut, RotateCw, MessageSquare, Check, Flag, HelpCircle, AlertTriangle, Send, Badge, CheckCircle } from 'lucide-react'
+import { ZoomIn, ZoomOut, RotateCw, MessageSquare, Check, Flag, HelpCircle, AlertTriangle, Send, Badge, CheckCircle, Loader2 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import StudentMessage from './StudentMessage'
 import AcceptRejectApplication from './AcceptRejectApplication'
 import AiAssistant from './AiAssistant'
+import { apiClient } from '@/lib/api-client'
+import { GET_STUDENT_INFO_BY_ID_ROUTE, HOST } from '@/utils/constants'
+import { useParams } from 'react-router-dom'
+import toast from 'react-hot-toast'
 
 
-const initialStudents = [
-  { id: 1, name: "Rahul Sharma", applicationNumber: "APP001", course: "Computer Science", college: "University of Kashmir", status: "verified" ,path:"https://imgv2-1-f.scribdassets.com/img/document/454386504/original/1be334165f/1723373579?v=1" },
-  { id: 2, name: "Priya Patel", applicationNumber: "APP002", course: "Electrical Engineering", college: "Jammu University", status: "pending" ,path:"https://imgv2-1-f.scribdassets.com/img/document/454386504/original/1be334165f/1723373579?v=1" },
-  { id: 3, name: "Amit Kumar", applicationNumber: "APP003", course: "Mechanical Engineering", college: "Islamic University of Science and Technology", status: "flagged" , path:"https://imgv2-1-f.scribdassets.com/img/document/454386504/original/1be334165f/1723373579?v=1" },
-  { id: 4, name: "Sneha Gupta", applicationNumber: "APP004", course: "Civil Engineering", college: "Cluster University of Jammu", status: "verified" , path:"https://imgv2-1-f.scribdassets.com/img/document/454386504/original/1be334165f/1723373579?v=1" },
-  { id: 5, name: "Vikram Singh", applicationNumber: "APP005", course: "Chemical Engineering", college: "Baba Ghulam Shah Badshah University", status: "pending", path:"https://imgv2-1-f.scribdassets.com/img/document/454386504/original/1be334165f/1723373579?v=1"  },
-]
+
 
 export default function StudentInfo() {
   const [zoomLevel, setZoomLevel] = useState(100)
   const [rotation, setRotation] = useState(0)
-  const [documents,setDocuments] = useState(initialStudents)
+  const [documents,setDocuments] = useState([])
+  const { studentId } = useParams();
+  const [studentData, setStudentData] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [isData, setIsData] = useState(false);
+
+
 
   const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 10, 200))
   const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 10, 50))
@@ -37,11 +41,56 @@ export default function StudentInfo() {
     ))
   }
 
+  useEffect(() => {
+    const fetchStudentData = async () => {
+      try {
+        const response = await apiClient.get(`${GET_STUDENT_INFO_BY_ID_ROUTE}/${studentId}`,{withCredentials: true});
+        setStudentData(response.data.userinfo);
+        
+        const {
+          photograph,
+          signature,
+          aadharCard,
+          tenthCertificate,
+          twelfthCertificate,
+          casteCertificate,
+          incomeCertificate,
+          domicileCertificate,
+          disabilityCertificate
+        } = response.data.userinfo;
 
+        setDocuments([
+          {id:1, name: 'Photograph', path: photograph , status:"pending" },
+          {id:2, name: 'Signature', path: signature, status:"pending" },
+          {id:3, name: 'Aadhar Card', path: aadharCard, status:"pending" },
+          {id:4, name: 'Tenth Certificate', path: tenthCertificate, status:"pending" },
+          {id:5, name: 'Twelfth Certificate', path: twelfthCertificate, status:"pending" },
+          {id:6, name: 'Caste Certificate', path: casteCertificate, status:"pending" },
+          {id:7, name: 'Income Certificate', path: incomeCertificate, status:"pending" },
+          {id:8, name: 'Domicile Certificate', path: domicileCertificate, status:"pending" },
+          {id:9, name: 'Disability Certificate', path: disabilityCertificate , status:"pending"}
+        ])
+        console.log(response.data.userinfo);
+        setIsData(true)
+        setIsLoading(false);
+      } catch (error) {
+        console.error(error);
+        toast.error("Error fetching student details.");
+        setIsLoading(false);
+      }
+    };
+    fetchStudentData();
+  }, [studentId, studentData.applicationStatus]);
+
+  if(isLoading) return <div className='w-full min-h-52 flex items-center justify-center'> <Loader2  className='text-blue-900 animate-spin' size={50}/></div>
+  if(!isData) return <div className='w-full min-h-52 flex items-center justify-center'> No Such Student Found</div>
 
   return (
     <div className="container mx-auto p-6 bg-gray-100 dark:bg-gray-900">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800 dark:text-gray-200">Student Profile: Manya Sharma</h1>
+      <h1 className="text-3xl font-bold mb-6 text-gray-800 dark:text-gray-200">Student Profile: {studentData.name}</h1>
+      <div className={`ml-5 w-fit rounded-lg text-white  py-2 px-4 ${studentData.applicationStatus === "Verified" ? "bg-green-500" : studentData.applicationStatus === "Pending" ? "bg-yellow-500" : "bg-red-500"}`}>
+        Status : {studentData.applicationStatus}
+      </div>
       <div className="flex flex-col lg:flex-row gap-6">
         <div className="w-full lg:w-2/3">
           <Tabs defaultValue="personal" className="w-full mb-10 border px-3 py-3 rounded-xl ">
@@ -61,31 +110,31 @@ export default function StudentInfo() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="name">Name (as per Aadhar Card)</Label>
-                      <Input id="name" value="Manya Sharma" readOnly />
+                      <Input id="name" value={studentData.name} readOnly />
                     </div>
                     <div>
                       <Label htmlFor="fathersName">Father's Name</Label>
-                      <Input id="fathersName" value="Rajesh Sharma" readOnly />
+                      <Input id="fathersName" value={studentData.fatherName} readOnly />
                     </div>
                     <div>
                       <Label htmlFor="dob">Date of Birth</Label>
-                      <Input id="dob" value="1998-05-15" readOnly />
+                      <Input id="dob" value={studentData.dob} readOnly />
                     </div>
                     <div>
                       <Label htmlFor="gender">Gender</Label>
-                      <Input id="gender" value="Female" readOnly />
+                      <Input id="gender" value={studentData.gender} readOnly />
                     </div>
                     <div>
                       <Label htmlFor="reservedCategory">Reserved Category</Label>
-                      <Input id="reservedCategory" value="OBC" readOnly />
+                      <Input id="reservedCategory" value={studentData.category} readOnly />
                     </div>
                     <div>
                       <Label htmlFor="email">Email ID</Label>
-                      <Input id="email" value="manya.sharma@gmail.com" readOnly />
+                      <Input id="email" value={studentData.emailId} readOnly />
                     </div>
                     <div>
                       <Label htmlFor="familyIncome">Total Family Income (Annually)</Label>
-                      <Input id="familyIncome" value="₹500,000" readOnly />
+                      <Input id="familyIncome" value={studentData.familyIncome} readOnly />
                     </div>
                   </div>
                 </CardContent>
@@ -100,51 +149,39 @@ export default function StudentInfo() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="collegeName">College Name</Label>
-                      <Input id="collegeName" value="XYZ Engineering College" readOnly />
+                      <Input id="collegeName" value={studentData.collegeName} readOnly />
                     </div>
                     <div>
                       <Label htmlFor="collegeAddress">College Address</Label>
-                      <Input id="collegeAddress" value="123 College St, City, State, 12345" readOnly />
+                      <Input id="collegeAddress" value={studentData.collegeAddress} readOnly />
                     </div>
                     <div>
                       <Label htmlFor="collegeEmail">Official College Email</Label>
-                      <Input id="collegeEmail" value="info@xyzcollege.edu" readOnly />
+                      <Input id="collegeEmail" value={studentData.collegeEmailID} readOnly />
                     </div>
                     <div>
                       <Label htmlFor="enrollNumber">Enrollment Number</Label>
-                      <Input id="enrollNumber" value="EN12345678" readOnly />
+                      <Input id="enrollNumber" value={studentData.enrollmentNumber} readOnly />
                     </div>
                     <div>
                       <Label htmlFor="institutionCode">Institution Code</Label>
-                      <Input id="institutionCode" value="IC9876" readOnly />
-                    </div>
-                    <div>
-                      <Label htmlFor="collegeBankAccount">College Bank Account Name</Label>
-                      <Input id="collegeBankAccount" value="XYZ College Account" readOnly />
-                    </div>
-                    <div>
-                      <Label htmlFor="ifscCode">IFSC Code</Label>
-                      <Input id="ifscCode" value="ABCD0001234" readOnly />
-                    </div>
-                    <div>
-                      <Label htmlFor="bankAddress">Bank Address</Label>
-                      <Input id="bankAddress" value="456 Bank St, City, State, 54321" readOnly />
+                      <Input id="institutionCode" value={studentData.institutionCode} readOnly />
                     </div>
                     <div>
                       <Label htmlFor="courseOpted">Course Opted</Label>
-                      <Input id="courseOpted" value="B.Tech in Computer Science" readOnly />
+                      <Input id="courseOpted" value={studentData.courseName} readOnly />
                     </div>
                     <div>
                       <Label htmlFor="courseDuration">Duration of Course (in years)</Label>
-                      <Input id="courseDuration" value="4" readOnly />
+                      <Input id="courseDuration" value={studentData.courseDuration} readOnly />
                     </div>
                     <div>
                       <Label htmlFor="feesPerYear">Fees per Year</Label>
-                      <Input id="feesPerYear" value="₹100,000" readOnly />
+                      <Input id="feesPerYear" value={studentData.feesPerSem} readOnly />
                     </div>
                     <div>
                       <Label htmlFor="totalFees">Total Fees of the Course</Label>
-                      <Input id="totalFees" value="₹400,000" readOnly />
+                      <Input id="totalFees" value={studentData.totalFees} readOnly />
                     </div>
                   </div>
                 </CardContent>
@@ -161,26 +198,21 @@ export default function StudentInfo() {
                       <TableRow>
                         <TableHead>Exam Passed</TableHead>
                         <TableHead>Board/University</TableHead>
+                        <TableHead>Passing Year</TableHead>
                         <TableHead>Total Marks</TableHead>
                         <TableHead>Marks Obtained</TableHead>
-                        <TableHead>Percentage</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      <TableRow>
-                        <TableCell>10th</TableCell>
-                        <TableCell>State Board</TableCell>
-                        <TableCell>500</TableCell>
-                        <TableCell>450</TableCell>
-                        <TableCell>90%</TableCell>
+                      {studentData.academicRecords.map((record, index)=> 
+                        <TableRow key={index}>
+                        <TableCell>{record.exam}</TableCell>
+                        <TableCell>{record.board}</TableCell>
+                        <TableCell>{record.yearOfPass}</TableCell>
+                        <TableCell>{record.totalMarks}</TableCell>
+                        <TableCell>{record.marksObtained}</TableCell>
                       </TableRow>
-                      <TableRow>
-                        <TableCell>12th</TableCell>
-                        <TableCell>State Board</TableCell>
-                        <TableCell>500</TableCell>
-                        <TableCell>425</TableCell>
-                        <TableCell>85%</TableCell>
-                      </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </CardContent>
@@ -193,12 +225,20 @@ export default function StudentInfo() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="permanentAddress">Permanent Address</Label>
-                    <Textarea id="permanentAddress" value="789 Residential St, City, State, 67890" readOnly />
+                    <Label htmlFor="permanentAddress">Address</Label>
+                    <Textarea id="permanentAddress" value={studentData.address} readOnly />
                   </div>
                   <div>
-                    <Label htmlFor="correspondenceAddress">Correspondence Address</Label>
-                    <Textarea id="correspondenceAddress" value="101 Hostel Rd, College Campus, City, State, 12345" readOnly />
+                    <Label htmlFor="correspondenceAddress"> City</Label>
+                    <Textarea id="correspondenceAddress" value={studentData.city} readOnly />
+                  </div>
+                  <div>
+                    <Label htmlFor="correspondenceAddress"> State</Label>
+                    <Textarea id="correspondenceAddress" value={studentData.state} readOnly />
+                  </div>
+                  <div>
+                    <Label htmlFor="correspondenceAddress"> PinCode</Label>
+                    <Textarea id="correspondenceAddress" value={studentData.pinCode} readOnly />
                   </div>
                 </CardContent>
               </Card>
@@ -246,7 +286,7 @@ export default function StudentInfo() {
                                     }}
                                   >
                                     <img 
-                                      src={doc.path} 
+                                      src={`${HOST}/${doc.path}`} 
                                       alt={doc.name}
                                       // className="max-w-full h-auto "
                                       style={{ transformOrigin: 'center center' }}
@@ -288,7 +328,7 @@ export default function StudentInfo() {
           
         </div>
       </div>
-      <AcceptRejectApplication />
+      <AcceptRejectApplication applicationId={studentData.applicationId} />
     </div>
   )
 }

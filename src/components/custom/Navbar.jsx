@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -8,26 +8,70 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Bell, LogOut, Menu, X, ChevronRight, FileText, CheckCircle, Flag, LayoutDashboard } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import useAuthStore from "@/store";
+import { apiClient } from "@/lib/api-client";
+import { CHECKAUTH_ROUTE, LOGOUT_ROUTE } from "@/utils/constants";
+import toast from "react-hot-toast";
 
 
 const Navbar = () => {
 
   const [isNavOpen, setIsNavOpen] = useState(false)
+  const {setIsLoggedIn, isLoggedIn} = useAuthStore();
+
+  const location = useLocation()
 
   const toggleNav = () => setIsNavOpen(!isNavOpen)
 
+  const navigate = useNavigate();
+
+  const checkLogin = async() =>{
+    try {
+     const response = await apiClient.get(CHECKAUTH_ROUTE,{withCredentials: true}) 
+     if(response.status === 200){
+       setIsLoggedIn(true)
+       if(location.pathname === '/') navigate('/dashboard')
+
+
+     }else{
+       setIsLoggedIn(false)
+     }
+    } catch (error) {
+     toast.error('You are not logged in')
+    }
+ }
+
+ 
+ useEffect(() => {
+   checkLogin()
+ }, [])
+ 
+ const handleLogout = async() =>{
+
+   try {
+     await apiClient.post(LOGOUT_ROUTE,{},{withCredentials:true})
+ 
+     setIsLoggedIn(false)
+     navigate('/')
+     toast.success("Logged out");
+     
+   } catch (error) {
+     toast.error("error occured while logging out");
+   }
+ }
+
   return (
     <div className="sticky top-0 z-50">
-      <nav className="bg-blue-600 text-white  p-4 flex justify-between items-center  shadow-xl">
+      <nav className="bg-blue-900 text-white  p-4 flex justify-between items-center  shadow-xl">
         <div className="flex items-center space-x-4">
           <Button variant="ghost" size="icon" onClick={toggleNav}>
             <Menu className="h-6 w-6" />
           </Button>
-          <Link to='/'><h1 className="text-xl font-bold">SAG Bureau</h1></Link>
+          <Link to='/dashboard'><h1 className="text-xl font-bold">SAG Bureau</h1></Link>
         </div>
         <div className="flex items-center space-x-4">
-          <Sheet>
+          {isLoggedIn && <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
                 <Bell className="h-6 w-6" />
@@ -53,10 +97,9 @@ const Navbar = () => {
                 ))}
               </div>
             </SheetContent>
-          </Sheet>
-          <Button variant="ghost" size="icon">
-            <LogOut className="h-6 w-6" />
-          </Button>
+          </Sheet>}
+          {!isLoggedIn ? <Link to="/" className=" hover:text-white-700 bg-white  px-4 py-2 rounded text-blue-900">Sign In</Link> : <button onClick={handleLogout} className="bg-red-600  px-4 py-2 rounded text-white">Log out</button> }
+            
         </div>
       </nav>
 
