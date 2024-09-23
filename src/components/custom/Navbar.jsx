@@ -111,7 +111,7 @@ const Navbar = () => {
           </SheetHeader>
           <nav className="mt-6 space-y-2">
             {[
-              { icon: LayoutDashboard, label: "Dashboard", path:"/" },
+              { icon: LayoutDashboard, label: "Dashboard", path:"/dashboard" },
               { icon: FileText, label: "Pending Students", path:"/pending" },
               { icon: CheckCircle, label: "Verified Students", path:"/verified" },
               { icon: Flag, label: "Disqualified Students", path:"/disqualified" },
