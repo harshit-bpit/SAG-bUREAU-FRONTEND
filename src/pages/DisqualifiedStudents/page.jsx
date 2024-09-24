@@ -63,7 +63,7 @@ export default function DisqualifiedStudent() {
      
 
       <main className="flex-grow container mx-auto py-8">
-        <h1 className="text-4xl font-bold  mb-8">Students Verified</h1>
+        <h1 className="text-4xl font-bold  mb-8">Students DisQualified</h1>
         {!isLoading ? <div className="bg-white rounded-lg shadow-md p-6">
           <Input
             type="text"

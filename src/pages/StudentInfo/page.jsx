@@ -59,6 +59,16 @@ export default function StudentInfo() {
           disabilityCertificate
         } = response.data.userinfo;
 
+        console.log( photograph,
+          signature,
+          aadharCard,
+          tenthCertificate,
+          twelfthCertificate,
+          casteCertificate,
+          incomeCertificate,
+          domicileCertificate,
+          disabilityCertificate);
+
         setDocuments([
           {id:1, name: 'Photograph', path: photograph , status:"pending" },
           {id:2, name: 'Signature', path: signature, status:"pending" },
@@ -286,7 +296,7 @@ export default function StudentInfo() {
                                     }}
                                   >
                                     <img 
-                                      src={`${HOST}/${doc.path}`} 
+                                      src={doc.path} 
                                       alt={doc.name}
                                       // className="max-w-full h-auto "
                                       style={{ transformOrigin: 'center center' }}

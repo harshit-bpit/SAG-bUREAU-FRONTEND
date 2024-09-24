@@ -36,7 +36,8 @@ const SignIn = () => {
       setIsLoggedIn(true);
       console.log(response);
       navigate('/dashboard')
-      toast.success(response.data);
+      console.log(response);
+      // toast.success(response.data);
     } catch (error) {
       console.log(error);
       toast.error(error.response.data)
